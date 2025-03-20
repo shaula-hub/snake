@@ -572,7 +572,7 @@ const Snake = () => {
   }, []);
 
   const incrementScore = useCallback(() => {
-    setScore(prevScore => prevScore + 5);
+    setScore(prevScore => prevScore + 1);
   }, []);
 
   const checkCollision = useCallback((head) => {
@@ -827,7 +827,7 @@ useEffect(() => {
         backgroundColor: "white",
       }}>
 
-      <DebugWindow  
+      {/* <DebugWindow  
               snake={snake}
               food={food}
               nonEatenFood={nonEatenFood}
@@ -839,12 +839,13 @@ useEffect(() => {
               gameStarted={gameStarted} 
               lastResetTime={Date.now()}
       />
-
+  */}
       <div style={{
         transform: `scale(${containerScale})`,
         transformOrigin: 'center center',
         padding: "1rem",
       }}>
+    
 
       <div style={{
         position: "fixed",
