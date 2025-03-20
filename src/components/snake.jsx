@@ -13,8 +13,8 @@ const SNAKE_HEADS = {
 };
 const DIRECTIONS = ["UP", "DOWN", "LEFT", "RIGHT"];
 
-const GRID_SIZE = 20;
-const CELL_SIZE = 10; // Explicit cell size for clarity
+const GRID_SIZE = 25;
+const CELL_SIZE = 20; // Explicit cell size for clarity
 const BOARD_SIZE = GRID_SIZE * CELL_SIZE;
 const INITIAL_POSITION = { x: 5, y: 5 };
 
