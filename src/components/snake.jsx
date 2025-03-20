@@ -16,6 +16,10 @@ const DIRECTIONS = ["UP", "DOWN", "LEFT", "RIGHT"];
 const GRID_SIZE = 25;
 const CELL_SIZE = 20; // Explicit cell size for clarity
 const BOARD_SIZE = GRID_SIZE * CELL_SIZE;
+const MOBILE_GRID_SIZE = 18; // Smaller grid for mobile
+const MOBILE_CELL_SIZE = 16; // Smaller cells for mobile
+const MOBILE_BOARD_SIZE = MOBILE_GRID_SIZE * MOBILE_CELL_SIZE;
+
 const INITIAL_POSITION = { x: 5, y: 5 };
 
   // Add Tetromino shapes from Tetris game
@@ -358,6 +362,9 @@ const Snake = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [containerScale, setContainerScale] = useState(1);  
+  const [actualGridSize, setActualGridSize] = useState(GRID_SIZE);
+  const [actualCellSize, setActualCellSize] = useState(CELL_SIZE);
+  const [actualBoardSize, setActualBoardSize] = useState(BOARD_SIZE);
 
   // Function to rotate a shape (from Tetris)
   const rotateShape = (shape, times = 1) => {
@@ -769,148 +776,143 @@ const updateFoodItemsWithDistance = useCallback((head) => {
 //  }, [isPaused, direction, food, gameOver, speed, checkCollision, generateFood, gameType, nonEatenFood, foodItems, generateFoodTetra, score, gameStarted]);
   }, [incrementScore, updateFoodItemsWithDistance, handleGameOver, BounceEatenFood, isPaused, direction, food, gameOver, speed, checkCollision, generateFood, gameType, nonEatenFood, foodItems, generateFoodTetra, score, gameStarted, debugStepMode, waitingForStep, stepCount]);
 
-// Detect mobile device and handle scaling
-useEffect(() => {
-  const detectMobileDevice = () => {
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-    const isMobileWidth = window.innerWidth <= 768;
-    return isMobileDevice || isMobileWidth;
-  };
-  
-  setIsMobile(detectMobileDevice());
-  
-  const handleResize = () => {
-    const newWidth = window.innerWidth;
-    const newHeight = window.innerHeight;
+  // Detect mobile device and handle scaling
+  useEffect(() => {
+    const detectMobileDevice = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isMobileWidth = window.innerWidth <= 768;
+      return isMobileDevice || isMobileWidth;
+    };
     
-    setWindowSize({
-      width: newWidth,
-      height: newHeight
-    });
+    const isMobileDetected = detectMobileDevice();
+    setIsMobile(isMobileDetected);
     
-    // Calculate appropriate scale for the game container
-    const containerSize = BOARD_SIZE + 210; // Height of the container plus margins
-    const availableHeight = newHeight * 0.95; // Use 95% of viewport height
+    // Set grid and cell size based on device type
+    if (isMobileDetected) {
+      setActualGridSize(MOBILE_GRID_SIZE);
+      setActualCellSize(MOBILE_CELL_SIZE);
+      setActualBoardSize(MOBILE_BOARD_SIZE);
+    } else {
+      setActualGridSize(GRID_SIZE);
+      setActualCellSize(CELL_SIZE);
+      setActualBoardSize(BOARD_SIZE);
+    }
     
-    // Scale down if container is larger than available height, never scale up
-    const newScale = availableHeight < containerSize
-      ? availableHeight / containerSize
-      : 1;
+    const handleResize = () => {
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+      
+      setWindowSize({
+        width: newWidth,
+        height: newHeight
+      });
+      
+      // Calculate appropriate scale for both width and height
+      const currentBoardSize = isMobileDetected ? MOBILE_BOARD_SIZE : BOARD_SIZE;
+      const containerWidth = currentBoardSize + 60;  // Width with padding
+      const containerHeight = currentBoardSize + 180; // Height with headers, score, etc.
+      
+      const availableWidth = newWidth * 0.95; // Use 95% of viewport width
+      const availableHeight = newHeight * 0.90; // Use 90% of viewport height
+      
+      // Calculate scale based on both dimensions
+      const horizontalScale = availableWidth / containerWidth;
+      const verticalScale = availableHeight / containerHeight;
+      
+      // Use the smaller scale to ensure everything fits
+      const newScale = Math.min(horizontalScale, verticalScale, 1); // Never scale up
+      
+      setContainerScale(newScale);
+    };
     
-    setContainerScale(newScale);
-  };
-  
-  handleResize();
-  window.addEventListener('resize', handleResize);
-  
-  // Prevent scrolling on mobile
-  document.body.style.overflow = 'hidden';
-  
-  return () => {
-    window.removeEventListener('resize', handleResize);
-    document.body.style.overflow = 'auto';
-  };
-}, []);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    // Prevent scrolling on mobile
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
+  // Update your render method to use the dynamic sizes
   return (
-      <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "white",
-      }}>
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "white",
+    }}>
 
-      {/* <DebugWindow  
-              snake={snake}
-              food={food}
-              nonEatenFood={nonEatenFood}
-              foodItems={foodItems || []}
-              collision={collision}
-              collisionEffect={collisionEffect}
-              gameOver={gameOver}
-              showGameOverDialog={showGameOverDialog}
-              gameStarted={gameStarted} 
-              lastResetTime={Date.now()}
-      />
-  */}
       <div style={{
         transform: `scale(${containerScale})`,
         transformOrigin: 'center center',
-        padding: "1rem",
+        padding: isMobile ? "0.5rem" : "1rem",
       }}>
-    
-
-      <div style={{
-        position: "fixed",
-        top: "10px",
-        left: "10px",
-        backgroundColor: "rgba(0,0,0,0.7)",
-        color: "white",
-        padding: "10px",
-        borderRadius: "5px",
-        fontSize: "12px",
-        zIndex: 1000
-      }}>
-      </div>
-
+      
         <div style={{
-          width: `${BOARD_SIZE + 60}px`, // Added padding consideration
-          height: `${BOARD_SIZE + 210}px`, // Increased to fit all content with padding
+          width: `${actualBoardSize + (isMobile ? 40 : 60)}px`,
+          height: `${actualBoardSize + (isMobile ? 160 : 210)}px`,
           backgroundColor: "#ffc0cb",
           borderRadius: "0.5rem",
           boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-          padding: "1.5rem",
+          padding: isMobile ? "1rem" : "1.5rem",
         }}>
-
-        <div style={{
-          backgroundColor: "#000080",
-          padding: "1rem",
-          borderRadius: "0.5rem",
-          marginBottom: "1rem",
-          textAlign: "center",
-          color: "white",
-          fontSize: "24px",
-          fontWeight: "bold",
-          width: `${BOARD_SIZE + 30}px`, // Match width with game field
-          boxSizing: "border-box",
-          margin: "0 auto", // Center horizontally
-        }}>
-          SNAKE {gameType.charAt(0).toUpperCase() + gameType.slice(1)}
-        </div>
-
-        <div style={{
-          backgroundColor: "#0000FF",
-          padding: "1rem",
-          borderRadius: "0.5rem",
-          marginBottom: "1rem",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}>
-          <div style={{ color: "white", fontSize: "1.25rem" }}>
-            Speed: {speed}ms (- slower, + faster)
+        
+          {/* Update header sizes */}
+          <div style={{
+            backgroundColor: "#000080",
+            padding: isMobile ? "0.5rem" : "1rem",
+            borderRadius: "0.5rem",
+            marginBottom: isMobile ? "0.5rem" : "1rem",
+            textAlign: "center",
+            color: "white",
+            fontSize: isMobile ? "18px" : "24px",
+            fontWeight: "bold",
+            width: `${actualBoardSize + (isMobile ? 20 : 30)}px`,
+            boxSizing: "border-box",
+            margin: "0 auto",
+          }}>
+            SNAKE {gameType.charAt(0).toUpperCase() + gameType.slice(1)}
           </div>
-          <div style={{ color: "white", fontSize: "1.25rem" }}>
-            Score: {score}
+          
+          {/* Update score board */}
+          <div style={{
+            backgroundColor: "#0000FF",
+            padding: isMobile ? "0.5rem" : "1rem",
+            borderRadius: "0.5rem",
+            marginBottom: isMobile ? "0.5rem" : "1rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}>
+            <div style={{ color: "white", fontSize: isMobile ? "0.9rem" : "1.25rem" }}>
+              Speed: {speed}ms
+            </div>
+            <div style={{ color: "white", fontSize: isMobile ? "0.9rem" : "1.25rem" }}>
+              Score: {score}
+            </div>
           </div>
-        </div>
-
-        <div style={{
-          position: "relative",
-          width: `${BOARD_SIZE + 10}px`, // Match width with container considering padding
-          height: `${BOARD_SIZE}px`,
-          border: "4px solid #1f2937",
-          backgroundColor: "#fff8dc",
-          boxSizing: "border-box",
-          margin: "0 auto", // Center the play field
-        }}>
+          
+          {/* Update game field */}
+          <div style={{
+            position: "relative",
+            width: `${actualBoardSize + (isMobile ? 5 : 10)}px`,
+            height: `${actualBoardSize}px`,
+            border: "4px solid #1f2937",
+            backgroundColor: "#fff8dc",
+            boxSizing: "border-box",
+            margin: "0 auto",
+          }}>
           {snake.map((segment, i) => (
             <div
               key={i}
@@ -933,13 +935,14 @@ useEffect(() => {
           ))}
 
           {/* Food display */}
+          {/* Update food rendering to use actualCellSize */}
           {gameType === "classic" ? (
             <div style={{
               position: "absolute",
-              width: `${CELL_SIZE}px`,
-              height: `${CELL_SIZE}px`,
-              left: `${food.x * CELL_SIZE}px`,
-              top: `${food.y * CELL_SIZE}px`,
+              width: `${actualCellSize}px`,
+              height: `${actualCellSize}px`,
+              left: `${food.x * actualCellSize}px`,
+              top: `${food.y * actualCellSize}px`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -952,10 +955,10 @@ useEffect(() => {
                 key={`food-${index}`}
                 style={{
                   position: "absolute",
-                  width: `${CELL_SIZE}px`,
-                  height: `${CELL_SIZE}px`,
-                  left: `${foodItem.x * CELL_SIZE}px`,
-                  top: `${foodItem.y * CELL_SIZE}px`,
+                  width: `${actualCellSize}px`,
+                  height: `${actualCellSize}px`,
+                  left: `${foodItem.x * actualCellSize}px`,
+                  top: `${foodItem.y * actualCellSize}px`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -971,10 +974,10 @@ useEffect(() => {
             <div
               style={{
                 position: "absolute",
-                left: `${collisionEffect.x * CELL_SIZE - CELL_SIZE}px`,
-                top: `${collisionEffect.y * CELL_SIZE - CELL_SIZE}px`,
-                width: `${CELL_SIZE * 3}px`,
-                height: `${CELL_SIZE * 3}px`,
+                left: `${collisionEffect.x * actualCellSize - actualCellSize}px`,
+                top: `${collisionEffect.y * actualCellSize - actualCellSize}px`,
+                width: `${actualCellSize * 3}px`,
+                height: `${actualCellSize * 3}px`,
                 zIndex: 50,
               }}
             >
