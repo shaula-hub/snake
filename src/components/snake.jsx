@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import DebugWindow from "./DebugWindow";
+// import DebugWindow from "./DebugWindow";
 import TouchControls from './TouchControls';
 import './snake.css';
 
